@@ -15,9 +15,10 @@
 2. **Vercel** → Add New Project → 저장소 선택 → Deploy (처음엔 DB가 없어 화면이 비어도 정상)
 3. Vercel 프로젝트 → **Storage** → Neon(Postgres) 만들기 → 프로젝트에 연결 (`DATABASE_URL` 자동 등록)
    - 같은 곳에서 **Blob** 스토어도 만들어 연결 (`BLOB_READ_WRITE_TOKEN` 자동 등록, 이미지 업로드용)
-4. Neon **SQL Editor**에서 순서대로 실행
-   `db/schema.sql` → `supabase/seed_decks.sql` → `update_deck_details.sql` → `update_image_urls.sql` → `update_u_grade.sql` → `rename_decks.sql` → `update_deck_order.sql`
-   (`supabase/` 폴더의 시드 파일은 일반 Postgres SQL이라 그대로 사용 가능)
+4. **DB 초기 세팅** (택1)
+   - 터미널: `.env.local`에 `POSTGRES_URL`(Vercel → Settings → Environment Variables에서 복사)을 넣고 `npm run db:setup`
+   - 직접: Neon **SQL Editor**에 `db/setup/`의 파일을 **번호 순서대로 하나씩** 붙여넣고 실행 (파일마다 170줄 이하)
+   - `db/setup/` 파일은 여러 번 실행해도 안전하며, 이 폴더가 DB 초기 데이터의 유일한 원본입니다
 5. **Google Cloud** → 사용자 인증 정보 → OAuth 클라이언트 ID(웹 애플리케이션)
    - 승인된 리디렉션 URI: `https://<내 도메인>/api/auth/callback/google` (로컬: `http://localhost:3000/api/auth/callback/google`)
 6. Vercel → Settings → Environment Variables 추가
