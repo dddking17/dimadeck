@@ -34,8 +34,10 @@ if (!/^postgres(ql)?:\/\//i.test(url)) {
   process.exit(1);
 }
 
+// Neon 의 풀러(-pooler) 주소는 대량 SQL 실행에 적합하지 않을 수 있어, 같은 DB 의 직접 연결 주소로 바꿔 접속합니다
+const connectionUrl = url.replace(/@([^/@:?]*)-pooler(\.[^/@:?]*neon\.tech)/i, "@$1$2");
 let host = "";
-try { host = new URL(url).hostname; } catch {}
+try { host = new URL(connectionUrl).hostname; } catch {}
 const isLocal = ["localhost", "127.0.0.1", "::1"].includes(host);
 
 // db/setup/ 안의 번호 순서(01_, 02_, …)대로 실행합니다. 파일을 추가하려면 번호만 맞춰 넣으면 됩니다.
@@ -44,7 +46,7 @@ const files = readdirSync("db/setup")
   .sort()
   .map((f) => `db/setup/${f}`);
 
-const client = new pg.Client({ connectionString: url, ssl: isLocal ? false : { rejectUnauthorized: false } });
+const client = new pg.Client({ connectionString: connectionUrl, ssl: isLocal ? false : { rejectUnauthorized: false } });
 try {
   console.log(`연결 대상: ${host}`);
   await client.connect();
