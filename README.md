@@ -13,7 +13,7 @@
 2. **Vercel → Storage**: **Neon(Postgres)** 와 **Blob(Public)** 을 만들어 프로젝트에 연결 (Production·Preview 체크)
 3. **DB 초기 데이터** (한 번만): 터미널에서
    `npm run db:setup -- "<Vercel 환경변수 POSTGRES_URL 값>"`
-   - 또는 Neon SQL Editor에 `db/setup/` 파일을 번호 순서대로 하나씩 붙여넣고 실행 (각 파일 8천 자 이하)
+   - 또는 Neon SQL Editor에 `db/setup/` 파일을 번호 순서대로 하나씩 붙여넣고 실행 (파일마다 5,500자 이하 — 붙여넣기 한계는 약 9,000자)
    - `db/setup/` 이 DB 초기 데이터의 유일한 원본입니다. 다시 실행하면 앱에서 직접 수정한 설명·이미지가 원래 값으로 돌아갑니다.
 4. **Google Cloud** → Google Auth Platform → 클라이언트 → 웹 애플리케이션 클라이언트
    - 승인된 리디렉션 URI: `https://<내 도메인>/api/auth/callback/google` (정확히 이 형태, 끝에 `/` 없음)

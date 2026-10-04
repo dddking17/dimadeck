@@ -1,6 +1,3 @@
--- 디지몬 이미지 경로 (이어서)
-
-update public.digimons set image_url = '/%EC%A7%80%EB%93%9C%EB%B0%80%EB%A0%88%EB%8B%88%EC%97%84%EB%AA%AC(%EA%B0%81%EC%84%B1).png' where name = '지드밀레니엄몬*(각성)';
 update public.digimons set image_url = '/%ED%99%A9%EC%A0%9C%EB%93%9C%EB%9D%BC%EB%AA%AC%20%ED%8C%94%EB%9D%BC%EB%94%98%EB%AA%A8%EB%93%9C(%EA%B0%81%EC%84%B1).png' where name = '황제드라몬 팔라딘모드*(각성)';
 update public.digimons set image_url = '/%EB%94%94%EC%95%84%EB%B8%94%EB%A1%9C%EB%AA%AC.png' where name = '디아블로몬';
 update public.digimons set image_url = '/%EC%95%84%EB%A7%88%EA%B2%8C%EB%AA%AC%5B%ED%95%A9%EC%84%B1%EC%B2%B4%5D.png' where name = '아마게몬[합성체]';

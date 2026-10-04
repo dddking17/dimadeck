@@ -1,7 +1,3 @@
--- 디지몬 이미지 경로 일괄 등록 (자동 생성, public/ 폴더의 정적 이미지 기준)
--- 공용 카탈로그이므로 UID 없이 바로 실행 가능합니다.
--- 퀀타몬은 이미지가 없어 제외되었습니다.
-
 update public.digimons set image_url = '/%EC%95%84%EA%B5%AC%EB%AA%AC.png' where name = '아구몬';
 update public.digimons set image_url = '/%EA%B7%B8%EB%A0%88%EC%9D%B4%EB%AA%AC.png' where name = '그레이몬';
 update public.digimons set image_url = '/%EB%A9%94%ED%83%88%EA%B7%B8%EB%A0%88%EC%9D%B4%EB%AA%AC.png' where name = '메탈그레이몬';
@@ -47,3 +43,4 @@ update public.digimons set image_url = '/%EB%9D%BC%ED%94%8C%EB%A0%88%EC%8B%9C%EB
 update public.digimons set image_url = '/%ED%8E%98%EC%96%B4%EB%A6%AC%EB%AA%AC.png' where name = '페어리몬';
 update public.digimons set image_url = '/%EC%9B%8C%EA%B7%B8%EB%A0%88%EC%9D%B4%EB%AA%AC(%EA%B0%81%EC%84%B1).png' where name = '워그레이몬*(각성)';
 update public.digimons set image_url = '/%EB%A9%94%ED%83%88%EA%B0%80%EB%A3%A8%EB%AA%AC(%EA%B0%81%EC%84%B1).png' where name = '메탈가루몬*(각성)';
+update public.digimons set image_url = '/%EC%A7%80%EB%93%9C%EB%B0%80%EB%A0%88%EB%8B%88%EC%97%84%EB%AA%AC(%EA%B0%81%EC%84%B1).png' where name = '지드밀레니엄몬*(각성)';

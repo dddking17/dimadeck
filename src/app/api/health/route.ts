@@ -41,8 +41,14 @@ export async function GET() {
         (select count(*) from decks where description <> '' and effect <> '')::int as decks_with_details`;
     db = { ok: true, ms: Date.now() - t0, region: dbRegion(dbUrl), ...rows[0] };
     if (!rows[0].decks) problems.push("DB는 연결됐지만 덱 데이터가 없습니다 → npm run db:setup (또는 db/setup/ SQL 실행)");
-    else if (rows[0].decks_with_details < rows[0].decks) {
-      problems.push(`덱 ${rows[0].decks - rows[0].decks_with_details}개에 설명/효과가 비어 있습니다 → db/setup/05~07 실행`);
+    else {
+      if (rows[0].decks_with_details < rows[0].decks) {
+        problems.push(`덱 ${rows[0].decks - rows[0].decks_with_details}개에 설명/효과가 비어 있습니다 → npm run db:setup 다시 실행`);
+      }
+      // 이미지가 없는 디지몬이 1~3종(예: 퀀타몬)은 정상, 그 이상이면 이미지 등록이 덜 된 것
+      if (rows[0].digimons - rows[0].digimons_with_image > 3) {
+        problems.push(`디지몬 ${rows[0].digimons - rows[0].digimons_with_image}종에 이미지가 연결되지 않았습니다 → npm run db:setup 다시 실행`);
+      }
     }
   } catch (e) {
     const msg = e instanceof Error ? e.message : "";
