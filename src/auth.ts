@@ -7,7 +7,8 @@ import Google from "next-auth/providers/google";
  * 사용자 식별자(user.id)는 구글 계정 고유 ID(sub)입니다.
  */
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  providers: [Google],
+  // 구글 계정이 여러 개여도 항상 계정 선택 창을 보여줘서, 관리자 계정으로 정확히 로그인하게 함
+  providers: [Google({ authorization: { params: { prompt: "select_account" } } })],
   session: { strategy: "jwt" },
   trustHost: true,
   pages: { error: "/auth/error" },

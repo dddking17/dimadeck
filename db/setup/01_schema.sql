@@ -6,7 +6,6 @@
 -- 사용자별 데이터(보유 여부, 즐겨찾기)는 구글 계정 고유 ID(text)로 구분합니다.
 -- 여러 번 실행해도 안전합니다.
 
-create extension if not exists "pgcrypto";
 
 create table if not exists public.digimons (
   id uuid primary key default gen_random_uuid(),

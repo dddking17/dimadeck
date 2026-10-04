@@ -444,7 +444,7 @@ export default function DeckApp({ userId, userName, userEmail, userAvatarUrl, is
           {userId ? (
             <>
               <div className="user-chip">
-                {userAvatarUrl ? <img src={userAvatarUrl} alt="" /> : null}
+                {userAvatarUrl ? <img src={userAvatarUrl} alt="" referrerPolicy="no-referrer" /> : null}
                 <span title={userEmail}>{userName || userEmail}</span>
               </div>
               <button className="btn" onClick={handleSignOut}>로그아웃</button>

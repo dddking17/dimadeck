@@ -5,11 +5,12 @@ export type SessionUser = { id: string; email: string };
 /** 관리자 판별: ADMIN_EMAIL 환경변수(쉼표로 여러 개 가능)와 로그인한 구글 이메일 비교 */
 export function isAdminEmail(email: string | null | undefined) {
   if (!email) return false;
+  // 환경변수에 공백/따옴표가 섞여 들어가도 인식되도록 정리
   const list = (process.env.ADMIN_EMAIL ?? "")
     .split(",")
-    .map((s) => s.trim().toLowerCase())
+    .map((s) => s.trim().replace(/^["']+|["']+$/g, "").toLowerCase())
     .filter(Boolean);
-  return list.includes(email.toLowerCase());
+  return list.includes(email.trim().toLowerCase());
 }
 
 export async function getSessionUser(): Promise<SessionUser | null> {
