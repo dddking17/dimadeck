@@ -1,21 +1,18 @@
-import { createClient } from "@/lib/supabase/server";
+import { auth } from "@/auth";
+import { isAdminEmail } from "@/lib/server-auth";
 import DeckApp from "@/components/DeckApp";
 
 export default async function HomePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const userName = (user?.user_metadata?.full_name as string) || (user?.user_metadata?.name as string) || "";
-  const userAvatarUrl = (user?.user_metadata?.avatar_url as string) || null;
+  const session = await auth();
+  const user = session?.user;
 
   return (
     <DeckApp
       userId={user?.id ?? null}
-      userName={userName}
+      userName={user?.name ?? ""}
       userEmail={user?.email ?? ""}
-      userAvatarUrl={userAvatarUrl}
+      userAvatarUrl={user?.image ?? null}
+      isAdmin={isAdminEmail(user?.email)}
     />
   );
 }

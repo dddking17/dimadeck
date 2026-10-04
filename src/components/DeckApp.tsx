@@ -1,16 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { useCallback, useEffect, useState } from "react";
+import { signIn, signOut } from "next-auth/react";
 import {
   deleteDeck,
   deleteDigimon,
-  fetchDecks,
-  fetchDigimons,
-  fetchFavoriteDeckIds,
-  fetchOwnership,
-  removeDigimonFromAllDecks,
+  fetchCatalog,
+  fetchMe,
   setDeckFavorite,
   setDigimonOwned,
   uploadDigimonImage,
@@ -32,13 +28,12 @@ function DigimonName({ name, className }: { name: string; className?: string }) 
   );
 }
 
-const ADMIN_USER_ID = process.env.NEXT_PUBLIC_ADMIN_USER_ID;
-
 type Props = {
   userId: string | null;
   userName: string;
   userEmail: string;
   userAvatarUrl: string | null;
+  isAdmin: boolean;
 };
 
 type DeckFormState = {
@@ -61,11 +56,7 @@ type DigimonFormState = {
 const emptyDeckForm: DeckFormState = { id: null, name: "", tier: "A", description: "", effect: "", memberIds: [] };
 const emptyDigimonForm: DigimonFormState = { id: null, name: "", imageUrl: null, imageFile: null, isUGrade: false };
 
-export default function DeckApp({ userId, userName, userEmail, userAvatarUrl }: Props) {
-  const supabase = useMemo(() => createClient(), []);
-  const router = useRouter();
-  const isAdmin = !!ADMIN_USER_ID && userId === ADMIN_USER_ID;
-
+export default function DeckApp({ userId, userName, userEmail, userAvatarUrl, isAdmin }: Props) {
   const [digimons, setDigimons] = useState<Digimon[]>([]);
   const [decks, setDecks] = useState<Deck[]>([]);
   const [ownership, setOwnership] = useState<Record<string, boolean>>({});
@@ -114,16 +105,11 @@ export default function DeckApp({ userId, userName, userEmail, userAvatarUrl }: 
   const loadAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [d, k, o, f] = await Promise.all([
-        fetchDigimons(supabase),
-        fetchDecks(supabase),
-        userId ? fetchOwnership(supabase, userId) : Promise.resolve({}),
-        userId ? fetchFavoriteDeckIds(supabase, userId) : Promise.resolve([]),
-      ]);
-      setDigimons(d);
-      setDecks(k);
-      setOwnership(o);
-      setFavorites(new Set(f));
+      const [catalog, me] = await Promise.all([fetchCatalog(), fetchMe()]);
+      setDigimons(catalog.digimons);
+      setDecks(catalog.decks);
+      setOwnership(me.ownership);
+      setFavorites(new Set(me.favorites));
       setErrorMsg(null);
     } catch (err) {
       console.error(err);
@@ -131,53 +117,35 @@ export default function DeckApp({ userId, userName, userEmail, userAvatarUrl }: 
     } finally {
       setLoading(false);
     }
-  }, [supabase, userId]);
+  }, []);
 
   useEffect(() => {
     loadAll();
-  }, [loadAll]);
+  }, [loadAll, userId]);
 
-  // ---------- realtime: 카탈로그 변경 + 내 보유 여부 변경을 즉시 반영 ----------
+  // ---------- 탭으로 돌아오면 최신 데이터로 갱신 (다른 기기에서 바꾼 내용 반영) ----------
   useEffect(() => {
-    let channel = supabase
-      .channel("deck-archive-changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "digimons" }, () => {
-        fetchDigimons(supabase).then(setDigimons).catch(() => {});
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "decks" }, () => {
-        fetchDecks(supabase).then(setDecks).catch(() => {});
-      });
-
-    if (userId) {
-      channel = channel
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "user_digimon_ownership", filter: `user_id=eq.${userId}` },
-          () => {
-            fetchOwnership(supabase, userId).then(setOwnership).catch(() => {});
-          }
-        )
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "user_deck_favorites", filter: `user_id=eq.${userId}` },
-          () => {
-            fetchFavoriteDeckIds(supabase, userId).then((f) => setFavorites(new Set(f))).catch(() => {});
-          }
-        );
+    function refresh() {
+      if (document.visibilityState !== "visible") return;
+      Promise.all([fetchCatalog(), fetchMe()])
+        .then(([catalog, me]) => {
+          setDigimons(catalog.digimons);
+          setDecks(catalog.decks);
+          setOwnership(me.ownership);
+          setFavorites(new Set(me.favorites));
+        })
+        .catch(() => {});
     }
-
-    channel.subscribe();
-
+    document.addEventListener("visibilitychange", refresh);
+    window.addEventListener("focus", refresh);
     return () => {
-      supabase.removeChannel(channel);
+      document.removeEventListener("visibilitychange", refresh);
+      window.removeEventListener("focus", refresh);
     };
-  }, [supabase, userId]);
+  }, []);
 
-  async function handleGoogleLogin() {
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    });
+  function handleGoogleLogin() {
+    signIn("google", { callbackUrl: "/" });
   }
 
   // ---------- derived ----------
@@ -260,7 +228,7 @@ export default function DeckApp({ userId, userName, userEmail, userAvatarUrl }: 
       return copy;
     });
     try {
-      await setDeckFavorite(supabase, userId, deckId, next);
+      await setDeckFavorite(deckId, next);
     } catch (err) {
       console.error(err);
       setFavorites((prev) => {
@@ -295,7 +263,7 @@ export default function DeckApp({ userId, userName, userEmail, userAvatarUrl }: 
     const next = !isOwned(digimon.id);
     setOwnership((prev) => ({ ...prev, [digimon.id]: next }));
     try {
-      await setDigimonOwned(supabase, userId, digimon.id, next);
+      await setDigimonOwned(digimon.id, next);
     } catch (err) {
       console.error(err);
       setOwnership((prev) => ({ ...prev, [digimon.id]: !next }));
@@ -326,7 +294,7 @@ export default function DeckApp({ userId, userName, userEmail, userAvatarUrl }: 
     const name = deckForm.name.trim();
     if (!name) return;
     try {
-      const saved = await upsertDeck(supabase, {
+      const saved = await upsertDeck({
         id: deckForm.id ?? undefined,
         name,
         tier: deckForm.tier,
@@ -348,7 +316,7 @@ export default function DeckApp({ userId, userName, userEmail, userAvatarUrl }: 
   async function handleDeleteDeck(id: string, name: string) {
     if (!window.confirm(`"${name}" 덱을 삭제할까요? (카탈로그에서 삭제되어 모든 사용자에게 사라집니다)`)) return;
     try {
-      await deleteDeck(supabase, id);
+      await deleteDeck(id);
       setDecks((prev) => prev.filter((d) => d.id !== id));
     } catch (err) {
       console.error(err);
@@ -369,7 +337,7 @@ export default function DeckApp({ userId, userName, userEmail, userAvatarUrl }: 
     const name = quickAddName.trim();
     if (!name) return;
     try {
-      const created = await upsertDigimon(supabase, { name });
+      const created = await upsertDigimon({ name });
       setDigimons((prev) => [...prev, created]);
       setDeckForm((prev) => ({ ...prev, memberIds: [...prev.memberIds, created.id] }));
       setQuickAddName("");
@@ -406,9 +374,9 @@ export default function DeckApp({ userId, userName, userEmail, userAvatarUrl }: 
     try {
       let imageUrl = digimonForm.imageUrl;
       if (digimonForm.imageFile) {
-        imageUrl = await uploadDigimonImage(supabase, digimonForm.imageFile);
+        imageUrl = await uploadDigimonImage(digimonForm.imageFile);
       }
-      const saved = await upsertDigimon(supabase, {
+      const saved = await upsertDigimon({
         id: digimonForm.id ?? undefined,
         name,
         image_url: imageUrl,
@@ -434,8 +402,7 @@ export default function DeckApp({ userId, userName, userEmail, userAvatarUrl }: 
       : `"${name}"을(를) 카탈로그에서 삭제할까요?`;
     if (!window.confirm(msg)) return;
     try {
-      await removeDigimonFromAllDecks(supabase, decks, id);
-      await deleteDigimon(supabase, id);
+      await deleteDigimon(id);
       setDigimons((prev) => prev.filter((d) => d.id !== id));
       setDecks((prev) => prev.map((d) => ({ ...d, member_ids: d.member_ids.filter((m) => m !== id) })));
     } catch (err) {
@@ -444,9 +411,8 @@ export default function DeckApp({ userId, userName, userEmail, userAvatarUrl }: 
     }
   }
 
-  async function handleSignOut() {
-    await supabase.auth.signOut();
-    router.refresh();
+  function handleSignOut() {
+    signOut({ callbackUrl: "/" });
   }
 
   if (loading) {
